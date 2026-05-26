@@ -1,0 +1,26 @@
+# GPT-Orchestrator — пример конфигурации
+# Скопировать в config.toml и заполнить ключи
+
+[api]
+provider = "anthropic"   # "anthropic" | "openai" | "deepseek"
+
+openai_key    = ""       # sk-...
+anthropic_key = ""       # sk-ant-...
+deepseek_key  = ""       # ваш DeepSeek API ключ
+
+model_openai    = "gpt-4o"
+model_anthropic = "claude-sonnet-4-20250514"
+model_deepseek  = "deepseek-chat"
+
+max_tokens       = 8192
+temperature      = 0.3
+request_timeout  = 120
+rpm              = 20    # Запросов в минуту (для OpenAI/Anthropic)
+                         # DeepSeek использует собственный лимит: 1 запрос / 5 минут
+
+[app]
+projects_dir = "projects"
+log_level    = "INFO"    # DEBUG | INFO | WARNING | ERROR
+theme        = "dark"
+font_size    = 13
+vim_mode     = true

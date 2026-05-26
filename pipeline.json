@@ -1,0 +1,289 @@
+{
+  "version": "1.6",
+  "description": "GPT-Orchestrator pipeline stages — все промпты требуют ответа в формате GPT_PROTO_V1",
+  "stages": [
+    {
+      "stage": "problem_analysis",
+      "category_label": "[Анализ задачи]",
+      "prompt": "Ты — ведущий системный аналитик. Проанализируй следующую задачу пользователя.\n\nЗАДАЧА:\n{{PROBLEM_DESCRIPTION}}\n\nВыполни полный анализ и верни ответ СТРОГО в формате GPT_PROTO_V1 (чистый JSON, без markdown).\n\nПоле data должно содержать:\n- core_problem: суть задачи одним предложением\n- goals: список конкретных целей\n- constraints: ограничения и требования\n- tech_stack: {language, frameworks, database, platform}\n- questions: список уточняющих вопросов [{id, question, default, options}]\n- complexity: low|medium|high\n- estimated_stages: примерное количество этапов разработки",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION"
+      ],
+      "key_outputs": [
+        "core_problem",
+        "goals",
+        "constraints",
+        "tech_stack",
+        "questions"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "user_clarification",
+      "category_label": "[Уточнение требований]",
+      "prompt": "На основе анализа задачи:\n\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nКОНТЕКСТ: {{FULL_CONTEXT}}\n\nСформулируй 3-7 уточняющих вопросов, которые помогут точнее реализовать проект.\nОтвечай СТРОГО в формате GPT_PROTO_V1.\n\nПоле data должно содержать:\n- questions: [{id: q1, question: текст вопроса, hint: подсказка, default: значение по умолчанию, options: [варианты или []]}]\n- language: язык программирования по умолчанию\n- frameworks: фреймворки по умолчанию",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "questions",
+        "language",
+        "frameworks"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "architecture_analysis",
+      "category_label": "[Архитектурный анализ]",
+      "prompt": "Ты — главный архитектор ПО. Разработай архитектуру проекта.\n\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nКОНТЕКСТ АНАЛИЗА: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- architecture_type: monolith|microservices|serverless|layered\n- layers: [{name, responsibility, technologies}]\n- data_flow: описание потока данных\n- tech_stack: {backend, frontend, database, cache, queue, devops}\n- modules: [{name, responsibility, api_endpoints: [], dependencies: []}]\n- scalability_notes: заметки о масштабировании\n- security_considerations: [список мер безопасности]",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "architecture_type",
+        "layers",
+        "tech_stack",
+        "modules"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "project_plan",
+      "category_label": "[План проекта]",
+      "prompt": "Составь детальный план разработки проекта.\n\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nАРХИТЕКТУРА: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- phases: [{phase, name, duration_days, tasks: [{id, title, description, files_to_create: []}]}]\n- total_duration_days: суммарное время\n- dependencies: [{task_id, depends_on: [ids]}]\n- milestones: [{name, description, deliverable}]\n- risks: [{risk, probability: low|medium|high, mitigation}]",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "phases",
+        "milestones",
+        "risks"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "global_spec_and_api",
+      "category_label": "[Глобальная спецификация]",
+      "prompt": "Создай полную техническую спецификацию проекта и API-контракт.\n\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nКОНТЕКСТ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- project_name: название\n- version: '1.0.0'\n- tech_stack: {language, framework, database, dependencies: ['pkg==ver']}\n- directory_structure: [{path, description}]\n- api_endpoints: [{method, path, description, request_body, response_body, auth_required}]\n- data_models: [{name, fields: [{name, type, required, description}]}]\n- environment_variables: [{name, description, example}]\n- configuration: {описание конфигурации}",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "project_name",
+        "tech_stack",
+        "directory_structure",
+        "api_endpoints",
+        "data_models"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "subproject_prompts_generation",
+      "category_label": "[Генерация промптов]",
+      "prompt": "Разбей проект на подпроекты и создай промпты для их реализации.\n\nСПЕЦИФИКАЦИЯ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- subprojects: [\n    {\n      id: sp1,\n      name: название,\n      description: описание,\n      files_to_generate: ['path/file.ext'],\n      prompt: полный промпт для генерации этого подпроекта,\n      dependencies: [ids других подпроектов],\n      priority: 1-10\n    }\n  ]\n- generation_order: [sp1, sp2, ...] в правильном порядке",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "subprojects",
+        "generation_order"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "subproject_implementation_trigger",
+      "category_label": "[Запуск реализации]",
+      "prompt": "Подтверди готовность к генерации кода для всех подпроектов.\n\nПЛАН ПОДПРОЕКТОВ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- ready: true\n- implementation_notes: [важные замечания для реализации]\n- entry_points: ['path/main.py', ...]\n- test_strategy: описание стратегии тестирования\n- estimated_files: количество файлов для генерации",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "ready",
+        "implementation_notes",
+        "entry_points"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "code_block_generation",
+      "category_label": "[Генерация кода]",
+      "prompt": "Ты — senior разработчик. Реализуй ВЕСЬ код проекта согласно спецификации.\n\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nСПЕЦИФИКАЦИЯ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nКРИТИЧЕСКИЕ ТРЕБОВАНИЯ к полю data:\n- files: ОБЯЗАТЕЛЬНЫЙ массив всех файлов проекта\n  Каждый файл: {filename: 'путь/файл.ext', content: 'ПОЛНЫЙ код', description: 'назначение'}\n- dependencies: ['package==version']\n- entry_point: 'main.py'\n- notes: 'заметки'\n\nВАЖНО: В поле content — ПОЛНЫЙ код файла, никаких '# TODO' или '...' заглушек.",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "files",
+        "dependencies",
+        "entry_point"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "optimization",
+      "category_label": "[Оптимизация]",
+      "prompt": "Ты — senior разработчик. Оптимизируй код проекта.\n\nСГЕНЕРИРОВАННЫЙ КОД: {{FULL_CONTEXT}}\n\nРЕЗУЛЬТАТЫ ЗАПУСКА И ПРОФИЛИРОВАНИЯ:\n{{PROFILING_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename, content, description, changes_made}]\n- optimizations_applied: [список оптимизаций]\n- performance_gains: описание улучшений\n- test_fixes: [файлы тестов если были провалы]\n- dependencies: обновлённые зависимости\n\nПриоритеты:\n1. Исправь все провалившиеся тесты\n2. Оптимизируй горячие точки из профилировщика\n3. Улучши производительность по данным профиля",
+      "key_placeholders": [
+        "FULL_CONTEXT",
+        "PROFILING_CONTEXT"
+      ],
+      "key_outputs": [
+        "files",
+        "optimizations_applied"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "unit_tests",
+      "category_label": "[Тесты]",
+      "prompt": "Напиши полный набор тестов для сгенерированного кода.\n\nКОД ПРОЕКТА: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename: 'tests/test_*.py', content: ПОЛНЫЙ код тестов, description: что тестируется}]\n- test_framework: pytest\n- coverage_target: 80\n- test_cases_count: количество тест-кейсов\n- fixtures: ['список фикстур']\n- mocks_used: ['что мокируется']\n\nВАЖНО: Тесты должны быть ЗАПУСКАЕМЫМИ и проверять реальное поведение.",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "files",
+        "coverage_target"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "refactoring",
+      "category_label": "[Рефакторинг]",
+      "prompt": "Выполни рефакторинг кода: улучши структуру, именование, архитектурные паттерны.\n\nТЕКУЩИЙ КОД: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename, content, description, refactoring_notes}]\n- patterns_applied: ['SOLID', 'DRY', ...]\n- removed_duplication: описание удалённых дублей\n- renamed_items: [{old, new, reason}]",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "files",
+        "patterns_applied"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "deployment_commands",
+      "category_label": "[Деплой]",
+      "prompt": "Создай скрипты деплоя и инструкции по запуску проекта.\n\nПРОЕКТ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [\n    {filename: 'setup.sh', content: '#!/bin/bash\\n...ПОЛНЫЙ скрипт...', description: 'Установка'},\n    {filename: 'docker-compose.yml', content: '...', description: 'Docker'},\n    {filename: 'Makefile', content: '...', description: 'Make команды'}\n  ]\n- requirements_txt: содержимое requirements.txt\n- run_command: команда для запуска\n- env_setup: инструкция по настройке .env",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "files",
+        "run_command"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "debugging_cli",
+      "category_label": "[Отладка]",
+      "prompt": "Отладь ошибку в проекте.\n\nКОНТЕКСТ ПРОЕКТА: {{FULL_CONTEXT}}\nКОМАНДА: {{COMMAND}}\nОШИБКА: {{ERROR_MESSAGE}}\nКОД: {{CODE_SNIPPET}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- diagnosis: точная причина ошибки\n- fix_type: syntax_error|logic_error|missing_dependency|config_error|other\n- corrected_code: исправленный код (полный файл)\n- file_path: путь к файлу\n- instructions: пошаговые инструкции исправления\n- prevention: как избежать подобных ошибок в будущем",
+      "key_placeholders": [
+        "FULL_CONTEXT",
+        "COMMAND",
+        "ERROR_MESSAGE",
+        "CODE_SNIPPET"
+      ],
+      "key_outputs": [
+        "diagnosis",
+        "fix_type",
+        "corrected_code",
+        "file_path"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "readme_generation",
+      "category_label": "[README]",
+      "prompt": "Создай профессиональный README.md для проекта.\n\nПРОЕКТ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename: 'README.md', content: '# Название...ПОЛНЫЙ README...', description: 'Документация'}]\n- badges: ['![Python](url)', ...]\n- sections: ['Installation', 'Usage', 'API', 'Contributing', 'License']\n\nREADME должен содержать: описание, установку, использование, API (если есть), примеры, лицензию.",
+      "key_placeholders": [
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "files"
+      ],
+      "creates_new_chat": false,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "project_critique",
+      "category_label": "[Критика и анализ]",
+      "prompt": "Выполни финальный технический анализ сгенерированного проекта.\n\nИСХОДНАЯ ЗАДАЧА: {{PROBLEM_DESCRIPTION}}\nВЕСЬ КОНТЕКСТ ГЕНЕРАЦИИ: {{FULL_CONTEXT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data должно содержать:\n- overall_score: 0-100\n- compliance_percent: 0-100\n- grades: {architecture,code_quality,test_coverage,documentation,security,performance,completeness} (0-10 каждый)\n- test_cases: [{id:'TC-001', category:'unit|integration|e2e|security|performance', description, preconditions, steps:[], expected_result, priority:'critical|high|medium|low'}]\n- strengths: []\n- weaknesses: []\n- critical_issues: []\n- recommendations: []\n- missing_features: []\n\nМинимум 5 тест-кейсов разных категорий.",
+      "key_placeholders": [
+        "PROBLEM_DESCRIPTION",
+        "FULL_CONTEXT"
+      ],
+      "key_outputs": [
+        "overall_score",
+        "grades",
+        "test_cases",
+        "strengths",
+        "weaknesses"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "fix_errors",
+      "category_label": "[Исправление ошибок запуска]",
+      "prompt": "Сгенерированный код содержит ошибки при запуске. Исправь их.\n\nКОД ПРОЕКТА: {{FULL_CONTEXT}}\n\nВЫВОД ОШИБОК:\n{{ERROR_OUTPUT}}\n\nПопытка исправления: {{FIX_ATTEMPT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename, content, description, fix_description}] — ПОЛНЫЙ код исправленных файлов\n- root_cause: описание причины ошибки\n- fixes_applied: [список применённых исправлений]\n\nВАЖНО: content должен содержать ПОЛНЫЙ рабочий код файла, а не фрагменты.",
+      "key_placeholders": [
+        "FULL_CONTEXT",
+        "ERROR_OUTPUT",
+        "FIX_ATTEMPT"
+      ],
+      "key_outputs": [
+        "files",
+        "root_cause",
+        "fixes_applied"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "fix_tests",
+      "category_label": "[Исправление тестов]",
+      "prompt": "Часть тестов провалилась. Исправь код или тесты.\n\nКОД ПРОЕКТА: {{FULL_CONTEXT}}\n\nВЫВОД ТЕСТОВ:\n{{TEST_OUTPUT}}\n\nПопытка исправления: {{FIX_ATTEMPT}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{filename, content, description}] — ПОЛНЫЙ код исправленных файлов\n- fixed_tests: [список исправленных тестов]\n- root_cause: почему тесты падали\n\nВАЖНО: content — ПОЛНЫЙ код, не фрагменты.",
+      "key_placeholders": [
+        "FULL_CONTEXT",
+        "TEST_OUTPUT",
+        "FIX_ATTEMPT"
+      ],
+      "key_outputs": [
+        "files",
+        "fixed_tests"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    },
+    {
+      "stage": "generate_spec",
+      "category_label": "[Генерация спецификации]",
+      "prompt": "Создай полный файл SPECIFICATION.md для проекта.\n\nКОНТЕКСТ ПРОЕКТА: {{FULL_CONTEXT}}\nЗАДАЧА: {{PROBLEM_DESCRIPTION}}\n\nОтвечай СТРОГО в формате GPT_PROTO_V1 (чистый JSON).\n\nПоле data:\n- files: [{\"filename\": \"SPECIFICATION.md\", \"content\": \"# Название\\n...\", \"description\": \"Техническая спецификация\"}]\n\nSPECIFICATION.md должен содержать:\n- Обзор проекта и цели\n- Архитектура\n- API Reference\n- Модели данных\n- Инструкция по установке\n- Переменные окружения\n- Руководство разработчика\n- Как расширять проект",
+      "key_placeholders": [
+        "FULL_CONTEXT",
+        "PROBLEM_DESCRIPTION"
+      ],
+      "key_outputs": [
+        "files"
+      ],
+      "creates_new_chat": true,
+      "parse_mode": "json"
+    }
+  ]
+}
